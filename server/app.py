@@ -96,16 +96,16 @@ def create_restaurant_pizza():
     pizza_id = data.get('pizza_id')
     restaurant_id = data.get('restaurant_id')
 
-    errors = []
+    validation_failed = False
     if not price or not isinstance(price, int) or not 1 <= price <= 30:
-        errors.append("Price must be an integer between 1 and 30.")
+        validation_failed = True
     if not db.session.get(Pizza, pizza_id):
-        errors.append("Pizza not found.")
+        validation_failed = True
     if not db.session.get(Restaurant, restaurant_id):
-        errors.append("Restaurant not found.")
+        validation_failed = True
 
-    if errors:
-        return jsonify({"errors": errors}), 400
+    if validation_failed:
+        return jsonify({"errors": ["validation errors"]}), 400
 
     restaurant_pizza = RestaurantPizza(price=price, pizza_id=pizza_id, restaurant_id=restaurant_id)
     db.session.add(restaurant_pizza)
@@ -131,3 +131,7 @@ def create_restaurant_pizza():
     }
 
     return jsonify(response_data), 201
+
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5555)

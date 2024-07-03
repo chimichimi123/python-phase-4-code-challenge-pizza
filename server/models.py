@@ -1,7 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import MetaData, ForeignKey
 from sqlalchemy.orm import relationship, validates
-from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy_serializer import SerializerMixin
 
 metadata = MetaData(
@@ -21,7 +20,7 @@ class Restaurant(db.Model, SerializerMixin):
     address = db.Column(db.String)
 
     restaurant_pizzas = relationship("RestaurantPizza", back_populates="restaurant", cascade="all, delete-orphan")
-    pizzas = relationship("Pizza", secondary="restaurant_pizzas", back_populates="restaurants")
+    pizzas = relationship("Pizza", secondary="restaurant_pizzas", back_populates="restaurants", overlaps="restaurant_pizzas")
 
     serialize_rules = ('-pizzas.restaurant_pizzas',)
 
@@ -37,7 +36,7 @@ class Pizza(db.Model, SerializerMixin):
     ingredients = db.Column(db.String)
 
     restaurant_pizzas = relationship("RestaurantPizza", back_populates="pizza", cascade="all, delete-orphan")
-    restaurants = relationship("Restaurant", secondary="restaurant_pizzas", back_populates="pizzas")
+    restaurants = relationship("Restaurant", secondary="restaurant_pizzas", back_populates="pizzas", overlaps="restaurant_pizzas")
 
     serialize_rules = ('-restaurants.restaurant_pizzas',)
 
@@ -53,8 +52,8 @@ class RestaurantPizza(db.Model, SerializerMixin):
     pizza_id = db.Column(db.Integer, ForeignKey("pizzas.id", ondelete="CASCADE"), nullable=False)
     price = db.Column(db.Integer, nullable=False)
 
-    restaurant = relationship("Restaurant", back_populates="restaurant_pizzas")
-    pizza = relationship("Pizza", back_populates="restaurant_pizzas")
+    restaurant = relationship("Restaurant", back_populates="restaurant_pizzas", overlaps="pizzas")
+    pizza = relationship("Pizza", back_populates="restaurant_pizzas", overlaps="restaurants,restaurant_pizzas")
 
     @validates('price')
     def validate_price(self, key, price):
@@ -64,6 +63,3 @@ class RestaurantPizza(db.Model, SerializerMixin):
 
     def __repr__(self):
         return f"<RestaurantPizza ${self.price}>"
-
-Restaurant.restaurant_pizzas = relationship("RestaurantPizza", back_populates="restaurant", cascade="all, delete-orphan")
-Pizza.restaurant_pizzas = relationship("RestaurantPizza", back_populates="pizza", cascade="all, delete-orphan")
